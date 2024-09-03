@@ -90,6 +90,7 @@ sub ROLLO_Initialize($) {
       . " rl_type:normal,HomeKit"
       . " disable:0,1"
       . " rl_forceDrive:0,1"
+      . " rl_forceStop:0,1"
       . " rl_noSetPosBlocked:0,1" . " "
       . $readingFnAttributes;
 
@@ -242,7 +243,7 @@ sub ROLLO_Set($@) {
         return "Unknown argument $cmd, choose one of $param";
     }
 
-    #### Stop if not driving - do we need that?
+    #### Stop if not driving - do we need that? maybe if rl_forceStop is not set to 1
     if ( ( $cmd eq "stop" ) && ( ReadingsVal( $name, "state", '' ) !~ /drive/ ) ) {
         Log3 $name, 3, "WARNING: command is stop but shutter is not driving!";
         RemoveInternalTimer($hash);
@@ -582,8 +583,8 @@ sub ROLLO_Stop($) {
 
     Log3 $name, 4, "ROLLO ($name) stops from $state at pct $pct";
 
-    #wenn autostop=1 und pct <> 0+100 und rollo fährt, dann kein stopbefehl ausführen...
-    if ( ( $state =~ /drive-/ && $pct > 0 && $pct < 100 ) || AttrVal( $name, "rl_autoStop", 0 ) ne 1 ) {
+    #wenn autostop=1 und pct <> 0+100 und rollo fährt, dann kein stopbefehl ausführen... ausser wenn rl_forceStop=1 und das rollo nicht fährt
+    if ( ( $state =~ /drive-/ && $pct > 0 && $pct < 100 ) || AttrVal( $name, "rl_autoStop", 0 ) ne 1 || (AttrVal( $name, "rl_forceStop", 0 ) ==1 && $state !~ /drive-/ ) ) {
         my $command = AttrVal( $name, 'rl_commandStop', "" );
         $command = AttrVal( $name, 'rl_commandStopUp', "" ) if ( AttrVal( $name, 'rl_commandStopUp', "" ) ne "" );
         $command = AttrVal( $name, 'rl_commandStopDown', "" )
