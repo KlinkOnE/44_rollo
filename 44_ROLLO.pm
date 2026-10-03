@@ -91,6 +91,7 @@ sub ROLLO_Initialize($) {
       . " disable:0,1"
       . " rl_forceDrive:0,1"
       . " rl_forceStop:0,1"
+	  . " rl_driveEnable"
       . " rl_noSetPosBlocked:0,1" . " "
       . $readingFnAttributes;
 
@@ -411,6 +412,29 @@ sub ROLLO_isAllowed($$$) {
 sub ROLLO_Drive {
     my ( $hash, $time, $direction, $command ) = @_;
     my $name = $hash->{NAME};
+
+    my $driveEnable = AttrVal( $name, "rl_driveEnable", "" );
+
+    if ( $driveEnable ne "" ) {
+        my ( $device, $reading, $expected ) = split( /[:=]/, $driveEnable, 3 );
+
+        if ( !defined($device) || !defined($reading) || !defined($expected)
+            || $device eq "" || $reading eq "" ) {
+            Log3 $name, 1,
+              "ROLLO ($name) invalid rl_driveEnable: $driveEnable";
+            return;
+        }
+
+        my $actual = ReadingsVal( $device, $reading, "" );
+
+        if ( $actual ne $expected ) {
+            Log3 $name, 1,
+              "ROLLO ($name) drive blocked by rl_driveEnable: "
+              . "$device:$reading = '$actual', expected '$expected'";
+            return;
+        }
+    }
+
     my ( $command1, $command2, $command3 );
     if ( $direction eq "down" ) {
         $command1 = AttrVal( $name, 'rl_commandDown',  "" );
